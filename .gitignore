@@ -1,0 +1,16 @@
+/target/
+/dist/
+/shots/
+/refs/
+**/*.rs.bk
+*.pdb
+*.ilk
+*.exe
+!dist/.gitkeep
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+*.swp
+*~
