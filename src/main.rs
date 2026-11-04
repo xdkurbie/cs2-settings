@@ -1,6 +1,7 @@
 //! CS2 Settings — live-game chrome recreation (centered column + GAME sub-tabs).
 //! No Valve assets. Fonts: Barlow Condensed (OFL).
 mod export;
+mod import;
 mod presets;
 mod settings;
 mod theme;
@@ -24,7 +25,7 @@ fn main() -> eframe::Result<()> {
         Box::new(|cc| {
             theme::install_fonts(&cc.egui_ctx);
             theme::apply(&cc.egui_ctx);
-            Ok(Box::new(Cs2SettingsApp::default()))
+            Ok(Box::new(Cs2SettingsApp::new(cc)))
         }),
     )
 }
@@ -48,6 +49,10 @@ struct Cs2SettingsApp {
     dynamic_preview: bool,
     fonts_ready: bool,
     bg_tex: Option<egui::TextureHandle>,
+    game_cfg_path: String,
+    userdata_cfg_path: String,
+    import_detail: String,
+    import_ok: bool,
 }
 
 impl Default for Cs2SettingsApp {
@@ -67,6 +72,10 @@ impl Default for Cs2SettingsApp {
             dynamic_preview: true,
             fonts_ready: false,
             bg_tex: None,
+            game_cfg_path: String::new(),
+            userdata_cfg_path: String::new(),
+            import_detail: String::new(),
+            import_ok: true,
         }
     }
 }
@@ -120,6 +129,14 @@ impl eframe::App for Cs2SettingsApp {
 }
 
 impl Cs2SettingsApp {
+    fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        let mut app = Self::default();
+        let saved = import::load_import_paths(&import::default_import_paths_file());
+        app.game_cfg_path = saved.game_cfg;
+        app.userdata_cfg_path = saved.userdata_cfg;
+        app
+    }
+
     fn ui_chrome(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
         // Header row: SETTINGS title + search + close
         ui.horizontal(|ui| {
@@ -387,6 +404,71 @@ impl Cs2SettingsApp {
     }
 
 
+    fn import_paths(&self) -> import::ImportPaths {
+        import::ImportPaths {
+            game_cfg: self.game_cfg_path.clone(),
+            userdata_cfg: self.userdata_cfg_path.clone(),
+        }
+    }
+
+    fn persist_import_paths(&self) {
+        let _ = import::save_import_paths(&import::default_import_paths_file(), &self.import_paths());
+    }
+
+    fn do_import(&mut self) {
+        self.persist_import_paths();
+        let paths = self.import_paths();
+        let report = import::import_settings(&mut self.settings, &paths);
+        self.import_ok = report.ok;
+        self.import_detail = report.summary.clone();
+        self.status = report.summary;
+        if report.ok {
+            self.baseline = self.settings.clone();
+        }
+    }
+
+    fn ui_import(&mut self, ui: &mut egui::Ui) {
+        self.section_header(ui, "Import Settings");
+        ui.label(
+            RichText::new(
+                "Read-only. Paste your CS2 folders and import autoexec, binds, and video into this menu.\n\
+                 Skrivebeskyttet — lim inn mappene, så hentes autoexec, binds og video. Ingenting skrives tilbake til spillet.",
+            )
+            .size(13.0)
+            .color(theme::TEXT),
+        );
+        ui.label(
+            RichText::new("Paths are saved locally and restored next launch. / Stiene huskes til neste gang.")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
+        let game_changed = path_field(
+            ui,
+            "game/csgo/cfg",
+            "…/Counter-Strike Global Offensive/game/csgo/cfg",
+            &mut self.game_cfg_path,
+        );
+        let user_changed = path_field(
+            ui,
+            "Steam userdata 730 cfg",
+            "…/userdata/<SteamID>/730/local/cfg    (730/cfg godtas også)",
+            &mut self.userdata_cfg_path,
+        );
+        if game_changed || user_changed {
+            self.persist_import_paths();
+        }
+        ui.add_space(4.0);
+        if gold_btn(ui, "IMPORT").clicked() {
+            self.do_import();
+        }
+        if !self.import_detail.is_empty() {
+            ui.add_space(4.0);
+            let color = if self.import_ok { theme::TEAL } else { theme::DANGER };
+            ui.label(RichText::new(&self.import_detail).size(12.0).color(color));
+        }
+        ui.add_space(10.0);
+    }
+
     fn do_export(&mut self, _ctx: &egui::Context) {
         let dir = rfd::FileDialog::new()
             .set_title("Export CS2 config folder")
@@ -541,6 +623,7 @@ impl Cs2SettingsApp {
     }
 
     fn ui_new(&mut self, ui: &mut egui::Ui) {
+        self.ui_import(ui);
         self.section_header(ui, "What's New");
         ui.label(
             RichText::new("Rush Hour (Sep 2026): crosshair length/thickness/gap are pixels at cl_crosshair_screen_height and scale to your screen. Share codes are now \"CS\" + 44 chars; old CSGO-xxxxx codes use a different scale.\nTest 2–3 candidates ~10 min DM each: bright walls, dark corners, smokes, far heads. Change one setting at a time.")
@@ -1222,6 +1305,40 @@ impl Cs2SettingsApp {
             self.settings.custom_commands.push(CustomCommand { line: String::new(), enabled: true });
         }
     }
+}
+
+fn path_field(ui: &mut egui::Ui, title: &str, hint: &str, path: &mut String) -> bool {
+    let mut changed = false;
+    ui.add_space(6.0);
+    ui.label(RichText::new(title).font(theme::row_font()).color(theme::TEXT));
+    ui.label(RichText::new(hint).size(11.0).color(theme::TEXT_DIM));
+    ui.horizontal(|ui| {
+        let width = (ui.available_width() - 96.0).max(140.0);
+        let resp = ui.add(
+            egui::TextEdit::singleline(path)
+                .hint_text("Paste folder path…")
+                .desired_width(width),
+        );
+        changed |= resp.changed();
+        let browse = ui.add(
+            egui::Button::new(RichText::new("BROWSE").font(theme::button_font()).color(theme::TEXT))
+                .fill(theme::PANEL_ALT)
+                .stroke(Stroke::new(1.0_f32, theme::BORDER))
+                .min_size(Vec2::new(78.0, 24.0)),
+        );
+        if browse.clicked() {
+            let start = import::normalize_user_path(path);
+            let mut dialog = rfd::FileDialog::new().set_title(title);
+            if start.is_dir() {
+                dialog = dialog.set_directory(&start);
+            }
+            if let Some(dir) = dialog.pick_folder() {
+                *path = dir.display().to_string();
+                changed = true;
+            }
+        }
+    });
+    changed
 }
 
 fn gold_btn(ui: &mut egui::Ui, text: &str) -> egui::Response {

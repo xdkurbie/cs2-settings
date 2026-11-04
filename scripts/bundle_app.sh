@@ -8,7 +8,7 @@ if [[ ! -x "$BIN" && -x "$ROOT/target/x86_64-apple-darwin/release/cs2-settings" 
 fi
 APP_NAME="CS2 Settings"
 DEST="${1:-$ROOT/dist/$APP_NAME.app}"
-VERSION="${APP_VERSION:-1.0.0}"
+VERSION="${APP_VERSION:-1.1.0}"
 
 if [[ ! -x "$BIN" ]]; then
   echo "Missing release binary. Run: cargo build --release" >&2
