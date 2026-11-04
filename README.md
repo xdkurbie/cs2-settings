@@ -21,6 +21,7 @@ Latest release: **[Releases](https://github.com/xdkurbie/cs2-settings/releases/l
 
 - Settings tabs styled after the CS2 Panorama menu (Video, Audio, Game, Keyboard/Mouse, Controller, …)
 - Pro / community presets (including donk, nuro, and other templates)
+- **Import** real configs from your `game/csgo/cfg` and Steam userdata `730` cfg folders (read-only)
 - **Export** real configs: `autoexec.cfg`, `cs2_video.txt`, `binds.cfg`, plus a short README
 - Custom Commands section for your own cvars
 - Cross-platform: Windows + Intel macOS via Releases; Linux via `cargo`
@@ -44,6 +45,23 @@ cargo build --release
 ./scripts/bundle_app.sh
 open ~/Applications/CS2\ Settings.app
 ```
+
+## Import from your CS2 folders
+
+On the **NEW** tab, **Import Settings** reads your real configs into the menu. Paste both folders. They are stored in `import_paths.json` under the app config directory (`%APPDATA%\cs2-settings` on Windows, `~/Library/Application Support/cs2-settings` on macOS, `~/.config/cs2-settings` on Linux), so you do not re-paste them every launch:
+
+1. **game/csgo/cfg** — install cfg, where `autoexec.cfg`, `config.cfg`, and bind cfgs live.
+   - Windows: `C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg`
+   - macOS: `~/Library/Application Support/Steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg`
+   - Linux: `~/.steam/steam/steamapps/common/Counter-Strike Global Offensive/game/csgo/cfg`
+2. **Steam userdata 730 cfg** — your account's CS2 cfg. `<SteamID>` is the numeric folder under `userdata` (not your profile name). `730/local/cfg` and `730/cfg` both work.
+   - Windows: `C:\Program Files (x86)\Steam\userdata\<SteamID>\730\local\cfg`
+   - macOS: `~/Library/Application Support/Steam/userdata/<SteamID>/730/local/cfg`
+   - Linux: `~/.steam/steam/userdata/<SteamID>/730/local/cfg`
+
+**Import** reads `autoexec.cfg`, `config.cfg` when present, bind cfgs, and `cs2_video.txt`. Known cvars fill the settings tabs; other autoexec lines land in Custom Commands. Import does **not** write to the game folders — use **Export config** for that.
+
+Steam → CS2 → Manage → Browse local files opens the game install. The userdata cfg sits beside `steamapps`, at `Steam/userdata/<SteamID>/730/local/cfg`.
 
 ## Using the exported configs
 
