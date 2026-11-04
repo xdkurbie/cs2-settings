@@ -6,11 +6,16 @@ Native desktop settings app for Counter-Strike 2 — a Rust/egui recreation of t
 
 > **Disclaimer:** Not affiliated with Valve, Steam, or Counter-Strike. Original UI recreation — **no Valve game assets**. Fonts: [Barlow Condensed](https://github.com/jpt/barlow) (SIL OFL).
 
-## Download (Windows)
+## Download
 
-Latest release: **[CS2Settings.exe](https://github.com/xdkurbie/cs2-settings/releases/latest)**
+Latest release: **[Releases](https://github.com/xdkurbie/cs2-settings/releases/latest)**
 
-Download `CS2Settings.exe` from Releases and run it. No installer required.
+| Platform | Artifact |
+|----------|----------|
+| Windows | `CS2Settings.exe` — download and run (no installer) |
+| macOS (Intel) | `CS2Settings-macos-intel.dmg` or `.zip` — open the DMG (or unzip) and drag **CS2 Settings** to Applications |
+
+> Unsigned macOS builds: right-click → Open the first time, or allow in System Settings → Privacy & Security.
 
 ## Features
 
@@ -18,7 +23,7 @@ Download `CS2Settings.exe` from Releases and run it. No installer required.
 - Pro / community presets (including donk, nuro, and other templates)
 - **Export** real configs: `autoexec.cfg`, `cs2_video.txt`, `binds.cfg`, plus a short README
 - Custom Commands section for your own cvars
-- Cross-platform source (Windows exe via Releases; macOS/Linux via `cargo`)
+- Cross-platform: Windows + Intel macOS via Releases; Linux via `cargo`
 
 ## Build from source
 
